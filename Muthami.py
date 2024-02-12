@@ -80,49 +80,123 @@ def clean_and_process_data(final_df):
 
     
 
-def aggs(final_df):
-    # final_df=clean_and_process_data(final_df)
-    max_date=final_df['Date'].max()
-    last_6_months = final_df[final_df['Date'] >= max_date + relativedelta(
-            months=-6)]
-    last_3_months = final_df[final_df['Date'] >= max_date + relativedelta(
-            months=-3)]
-    Frame={"Time_Space":["Whole_time","last_6_months","last_3_months"],
-      "Total_Debit":[final_df["Debit"].sum(),last_6_months["Debit"].sum(),last_3_months["Debit"].sum()],
-      "Average_Debit":[final_df["Debit"].mean(),last_6_months["Debit"].mean(),last_3_months["Debit"].mean()],
-      "Max_Debit":[final_df["Debit"].max(),last_6_months["Debit"].max(),last_3_months["Debit"].max()],
-      "Min_Debit":[final_df["Debit"].min(),last_6_months["Debit"].min(),last_3_months["Debit"].min()],
-      "Total_Credit":[final_df["Credit"].sum(),last_6_months["Credit"].sum(),last_3_months["Credit"].sum()],
-       "Average_Credit":[final_df["Credit"].mean(),last_6_months["Credit"].mean(),last_3_months["Credit"].mean()],
-      "Max_Credit":[final_df["Credit"].max(),last_6_months["Credit"].max(),last_3_months["Credit"].max()],
-      "Min_Credit":[final_df["Credit"].min(),last_6_months["Credit"].min(),last_3_months["Credit"].min()],
-      "Total_Balance":[final_df["Balance"].sum(),last_6_months["Balance"].sum(),last_3_months["Balance"].sum()],
-       "Average_Balance":[final_df["Balance"].mean(),last_6_months["Balance"].mean(),last_3_months["Balance"].mean()],
-      "Max_Balance":[final_df["Balance"].max(),last_6_months["Balance"].max(),last_3_months["Balance"].max()],
-      "Min_Balance":[final_df["Balance"].min(),last_6_months["Balance"].min(),last_3_months["Balance"].min()]}
-    Ags_output=pd.DataFrame(Frame)
+# def aggs(final_df):
+#     # final_df=clean_and_process_data(final_df)
+#     max_date=final_df['Date'].max()
+#     last_6_months = final_df[final_df['Date'] >= max_date + relativedelta(
+#             months=-6)]
+#     last_3_months = final_df[final_df['Date'] >= max_date + relativedelta(
+#             months=-3)]
+#     Frame={"Time_Space":["Whole_time","last_6_months","last_3_months"],
+#       "Total_Debit":[final_df["Debit"].sum(),last_6_months["Debit"].sum(),last_3_months["Debit"].sum()],
+#       "Average_Debit":[final_df["Debit"].mean(),last_6_months["Debit"].mean(),last_3_months["Debit"].mean()],
+#       "Max_Debit":[final_df["Debit"].max(),last_6_months["Debit"].max(),last_3_months["Debit"].max()],
+#       "Min_Debit":[final_df["Debit"].min(),last_6_months["Debit"].min(),last_3_months["Debit"].min()],
+#       "Total_Credit":[final_df["Credit"].sum(),last_6_months["Credit"].sum(),last_3_months["Credit"].sum()],
+#        "Average_Credit":[final_df["Credit"].mean(),last_6_months["Credit"].mean(),last_3_months["Credit"].mean()],
+#       "Max_Credit":[final_df["Credit"].max(),last_6_months["Credit"].max(),last_3_months["Credit"].max()],
+#       "Min_Credit":[final_df["Credit"].min(),last_6_months["Credit"].min(),last_3_months["Credit"].min()],
+#       "Total_Balance":[final_df["Balance"].sum(),last_6_months["Balance"].sum(),last_3_months["Balance"].sum()],
+#        "Average_Balance":[final_df["Balance"].mean(),last_6_months["Balance"].mean(),last_3_months["Balance"].mean()],
+#       "Max_Balance":[final_df["Balance"].max(),last_6_months["Balance"].max(),last_3_months["Balance"].max()],
+#       "Min_Balance":[final_df["Balance"].min(),last_6_months["Balance"].min(),last_3_months["Balance"].min()]}
+#     Ags_output=pd.DataFrame(Frame)
     
-    print(f"last_6_month min-date : {last_6_months['Date'].min()}")
-    print(f"last_6_month max-date : {last_6_months['Date'].max()}")
-    print(f"last_3_month min-date : {last_3_months['Date'].min()}")
-    print(f"last_3_month max-date : {last_3_months['Date'].max()}") 
-    print(f"whole_time max-date : {final_df['Date'].max()}") 
-    print(f"whole_time min-date : {final_df['Date'].min()}") 
-    return Ags_output
+#     print(f"last_6_month min-date : {last_6_months['Date'].min()}")
+#     print(f"last_6_month max-date : {last_6_months['Date'].max()}")
+#     print(f"last_3_month min-date : {last_3_months['Date'].min()}")
+#     print(f"last_3_month max-date : {last_3_months['Date'].max()}") 
+#     print(f"whole_time max-date : {final_df['Date'].max()}") 
+#     print(f"whole_time min-date : {final_df['Date'].min()}") 
+#     return Ags_output
 
 
 # In[427]:
 
+def aggs(final_df):
+    # Convert 'Date' column to datetime and create 'Transaction_Month' column
+    final_df['Date'] = pd.to_datetime(final_df['Date'])
+    final_df['Transaction_Month'] = final_df['Date'].dt.strftime('%b-%y')
 
-def out_put(path, client_name,cleaned_csv_filename="Cleaned_and_transformed_data", aggregated_csv_filename="summerised_aggregates"):
+    # Group by 'Transaction_Month' and calculate aggregates
+    Year_month_summaries = final_df.groupby(['Transaction_Month']).agg(
+        debit_count=pd.NamedAgg('Debit', 'count'), 
+        Total_debit=pd.NamedAgg('Debit', 'sum'),
+        credit_count=pd.NamedAgg('Credit', 'count'),
+        Total_credit=pd.NamedAgg('Credit', 'sum'),
+        Max_balance=pd.NamedAgg('Balance', 'max'),
+        Min_balance=pd.NamedAgg('Balance', 'min')
+    ).reset_index()
+
+    # Sort the DataFrame by 'Transaction_Month'
+    
+    Year_month_summaries = Year_month_summaries.sort_values(by='Transaction_Month', ascending=True, key=lambda x: pd.to_datetime(x, format='%b-%y'))
+
+    # Calculate sum and average rows
+    sum_row = Year_month_summaries.drop(columns=['Transaction_Month', 'Max_balance', 'Min_balance']).sum()
+    average_row = Year_month_summaries.drop(columns=['Transaction_Month', 'Max_balance', 'Min_balance']).mean()
+
+    # Create total row
+    total_row = pd.DataFrame(sum_row).T
+    total_row['Transaction_Month'] = 'Total'
+    total_row['Max_balance'] = ''  # Leave 'Max_balance' blank
+    total_row['Min_balance'] = ''  # Leave 'Min_balance' blank
+
+    # Create average row
+    average_row = pd.DataFrame(average_row).T
+    average_row['Transaction_Month'] = 'Average'
+    average_row['Max_balance'] = ''  # Leave 'Max_balance' blank
+    average_row['Min_balance'] = ''  # Leave 'Min_balance' blank
+
+    # Append total and average rows to the DataFrame
+    Year_month_summaries = pd.concat([Year_month_summaries, total_row, average_row], ignore_index=True)
+
+    # Apply styling to the DataFrame
+    Year_month_summaries_styled = Year_month_summaries.style.apply(lambda row: ['font-weight: bold' if row['Transaction_Month'] in ['Total', 'Average'] else '' for _ in row], axis=1)
+    
+    return Year_month_summaries_styled
+
+
+
+
+
+# def out_put(path, client_name,cleaned_csv_filename="Cleaned_and_transformed_data", aggregated_csv_filename="summerised_aggregates"):
+#     try:
+#         # Determine root directory
+#         root_dir = os.getcwd()
+    
+        
+#         # Join root directory with file names
+#         cleaned_csv_path = os.path.join(root_dir, client_name+"_"+cleaned_csv_filename + ".csv")
+#         aggregated_csv_path = os.path.join(root_dir, client_name+"_"+aggregated_csv_filename + ".csv")
+        
+#         # Perform data processing
+#         final_df = extract_and_condense_data(path)
+#         final_df = clean_and_process_data(final_df)
+        
+#         # Save cleaned data to CSV
+#         final_df.to_csv(cleaned_csv_path, index=False)  # Set index=False to avoid saving row numbers
+        
+        
+#         # Aggregate data and save to CSV
+#         final_df = aggs(final_df)
+#         final_df.to_csv(aggregated_csv_path, index=False)  # Set index=False to avoid saving row numbers
+#         print(f'Navigate to {cleaned_csv_path} to access Cleaned_and_transformed_data csv')
+#         print(f'Navigate to {aggregated_csv_path} to access summerised_aggregates_data csv')
+#         return final_df
+#     except Exception as e:
+#         print(e)
+
+
+
+def out_put(path, client_name, cleaned_csv_filename="Cleaned_and_transformed_data", aggregated_csv_filename="summerised_aggregates"):
     try:
         # Determine root directory
         root_dir = os.getcwd()
     
-        
         # Join root directory with file names
-        cleaned_csv_path = os.path.join(root_dir, client_name+"_"+cleaned_csv_filename + ".csv")
-        aggregated_csv_path = os.path.join(root_dir, client_name+"_"+aggregated_csv_filename + ".csv")
+        cleaned_csv_path = os.path.join(root_dir, client_name + "_" + cleaned_csv_filename + ".csv")
+        aggregated_csv_path = os.path.join(root_dir, client_name + "_" + aggregated_csv_filename + ".csv")
         
         # Perform data processing
         final_df = extract_and_condense_data(path)
@@ -131,15 +205,18 @@ def out_put(path, client_name,cleaned_csv_filename="Cleaned_and_transformed_data
         # Save cleaned data to CSV
         final_df.to_csv(cleaned_csv_path, index=False)  # Set index=False to avoid saving row numbers
         
-        
         # Aggregate data and save to CSV
-        final_df = aggs(final_df)
-        final_df.to_csv(aggregated_csv_path, index=False)  # Set index=False to avoid saving row numbers
+        final_df_aggregated = aggs(final_df)  # Call the aggs function to aggregate data and style the DataFrame
+        final_df_aggregated_df = final_df_aggregated.data  # Convert Styler object to DataFrame
+        final_df_aggregated_df.to_csv(aggregated_csv_path, index=False)  # Save DataFrame to CSV
+        
         print(f'Navigate to {cleaned_csv_path} to access Cleaned_and_transformed_data csv')
         print(f'Navigate to {aggregated_csv_path} to access summerised_aggregates_data csv')
-        return final_df
+        return final_df_aggregated
     except Exception as e:
         print(e)
+
+
 
 
 
